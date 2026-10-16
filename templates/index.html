@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row">
+    <!-- Sol Taraf: Çark ve Talepler -->
+    <div class="col-md-8">
+        <div class="card bg-secondary text-white p-4 shadow mb-4">
+            <h3 class="text-center mb-3">🎮 2-Slot Brainrot Çarkı</h3>
+            <p class="text-center text-light">Ortaya eşya koy, çevir! 2 slot aynı gelirse koyduğun eşyanın <b>2 katını</b> kazanırsın!</p>
+
+            <!-- Çark Slotları -->
+            <div class="row text-center mb-4">
+                <div class="col-6">
+                    <div class="border border-warning rounded p-4 bg-dark">
+                        <h4 id="slot1" class="text-warning mb-0">❓</h4>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="border border-warning rounded p-4 bg-dark">
+                        <h4 id="slot2" class="text-warning mb-0">❓</h4>
+                    </div>
+                </div>
+            </div>
+
+            <div id="result-message" class="text-center fw-bold fs-5 mb-3"></div>
+
+            <!-- Çevirme Formu -->
+            <form id="rng-form">
+                <div class="mb-3">
+                    <label class="form-label">Oynamak İçin Envanterinden Eşya Seç:</label>
+                    <select name="item_name" id="item-select" class="form-select bg-dark text-white border-warning" required>
+                        {% for item in user_items %}
+                            <option value="{{ item.item_name }}">{{ item.item_name }} (Adet: {{ item.amount }})</option>
+                        {% else %}
+                            <option value="" disabled selected>Envanterinde hiç eşya yok! Önce eşya yatır.</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" id="spin-btn" class="btn btn-warning w-100 fw-bold fs-5 text-dark" {% if not user_items %}disabled{% endif %}>🎰 ÇARKI ÇEVİR!</button>
+            </form>
+        </div>
+
+        <!-- Talepler ve Canlı Sohbet -->
+        <div class="card bg-secondary text-white p-4 shadow">
+            <h4 class="mb-3">📌 Taleplerim ve Canlı Sohbet Odaları</h4>
+            <table class="table table-dark table-bordered align-middle">
+                <thead>
+                    <tr>
+                        <th>Tür</th>
+                        <th>Eşya</th>
+                        <th>Durum</th>
+                        <th>Canlı Sohbet</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in my_requests %}
+                    <tr>
+                        <td>
+                            {% if req.type == 'DEPOSIT' %}
+                                <span class="badge bg-warning text-dark">Yatırma</span>
+                            {% else %}
+                                <span class="badge bg-success">Kazanılan Ödül</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ req.amount }}x {{ req.item_name }}</td>
+                        <td>
+                            {% if req.status == 'Bekliyor' %}
+                                <span class="text-warning">⏳ Admin Onayı Bekleniyor</span>
+                            {% elif 'Onaylandı' in req.status or 'verildi' in req.status %}
+                                <span class="text-success">✅ {{ req.status }}</span>
+                            {% else %}
+                                <span class="text-danger">❌ Reddedildi</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="/chat/{{ req.id }}" class="btn btn-info btn-sm fw-bold">💬 Canlı Sohbet</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" class="text-muted text-center">Henüz bir talebiniz bulunmuyor.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Sağ Taraf: Eşya Yatırma ve Fiyat Listesi -->
+    <div class="col-md-4">
+        <!-- Yatırma Formu -->
+        <div class="card bg-secondary text-white p-4 shadow mb-4">
+            <h4 class="mb-3">📥 Eşya Yatır (Deposit)</h4>
+            <form action="/deposit" method="POST">
+                <div class="mb-3">
+                    <label class="form-label">Brainrot Seçin:</label>
+                    <select name="item_name" class="form-select bg-dark text-white border-light" required>
+                        {% for stock in stocks %}
+                            <option value="{{ stock.name }}">{{ stock.name }} (Value: {{ stock.value }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Adet:</label>
+                    <input type="number" name="amount" value="1" min="1" max="100" class="form-control bg-dark text-white border-light" required>
+                </div>
+                <button type="submit" class="btn btn-success w-100 fw-bold">Yatırma Talebi Oluştur</button>
+            </form>
+        </div>
+
+        <!-- Stok Listesi -->
+        <div class="card bg-secondary text-white p-4 shadow">
+            <h4 class="mb-3">📊 Brainrot Değerleri</h4>
+            <ul class="list-group list-group-flush bg-dark rounded">
+                {% for stock in stocks %}
+                    <li class="list-group-item bg-dark text-white d-flex justify-content-between align-items-center border-secondary">
+                        <span>{{ stock.name }}</span>
+                        <span class="badge bg-warning text-dark">Val: {{ stock.value }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Çark Animasyon Scripti -->
+<script>
+    document.getElementById('rng-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const spinBtn = document.getElementById('spin-btn');
+        const slot1 = document.getElementById('slot1');
+        const slot2 = document.getElementById('slot2');
+        const resultMsg = document.getElementById('result-message');
+        
+        spinBtn.disabled = true;
+        spinBtn.innerText = "Çevriliyor...";
+        resultMsg.innerText = "";
+        
+        const formData = new FormData(this);
+        const itemsList = [{% for stock in stocks %}"{{ stock.name }}",{% endfor %}];
+        
+        let interval = setInterval(() => {
+            slot1.innerText = itemsList[Math.floor(Math.random() * itemsList.length)];
+            slot2.innerText = itemsList[Math.floor(Math.random() * itemsList.length)];
+        }, 100);
+
+        try {
+            const response = await fetch('/rng', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+
+            setTimeout(() => {
+                clearInterval(interval);
+                if(data.status === 'success') {
+                    slot1.innerText = data.rolled[0];
+                    slot2.innerText = data.rolled[1];
+                    
+                    if(data.won) {
+                        resultMsg.innerHTML = `<span class="text-success">🎉 KAZANDIN! İki eşya aynı geldi, 2 katı ödülün hazır! Sayfa yenileniyor...</span>`;
+                    } else {
+                        resultMsg.innerHTML = `<span class="text-danger">😢 KAZANAMADIN! Eşyan yandı. Sayfa yenileniyor...</span>`;
+                    }
+                    
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2500);
+                } else {
+                    clearInterval(interval);
+                    alert(data.message);
+                    spinBtn.disabled = false;
+                    spinBtn.innerText = "🎰 ÇARKI ÇEVİR!";
+                }
+            }, 1500);
+        } catch(err) {
+            clearInterval(interval);
+            alert("Bir hata oluştu!");
+            spinBtn.disabled = false;
+            spinBtn.innerText = "🎰 ÇARKI ÇEVİR!";
+        }
+    });
+</script>
+{% endblock %}

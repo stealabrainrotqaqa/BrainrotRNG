@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center mt-4">
+    <div class="col-md-8">
+        <div class="card bg-secondary text-white p-4 shadow">
+            <h3>💬 Canlı Destek & Sohbet Odası</h3>
+            <p class="text-warning">Talep ID: #{{ trade.id }} | Tür: <b>{{ trade.type }}</b> | Eşya: <b>{{ trade.amount }}x {{ trade.item_name }}</b> | Durum: <b>{{ trade.status }}</b></p>
+            <hr class="border-light">
+
+            <!-- Mesaj Listesi -->
+            <div class="chat-box p-3 bg-dark rounded mb-3" style="height: 350px; overflow-y: scroll;">
+                {% for m in messages %}
+                    <div class="mb-2">
+                        {% if m.sender_username == 'Sistem' %}
+                            <span class="text-info">[Sistem]: {{ m.message }}</span>
+                        {% elif m.sender_username == 'RealSaatYilmaz' %}
+                            <span class="text-danger fw-bold">[👑 Admin - RealSaatYilmaz]:</span> <span>{{ m.message }}</span>
+                        {% else %}
+                            <span class="text-warning fw-bold">[{{ m.sender_username }}:]</span> <span>{{ m.message }}</span>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Mesaj Gönderme Formu -->
+            <form method="POST">
+                <div class="input-group">
+                    <input type="text" name="message" class="form-control" placeholder="Mesajınızı yazın..." required autocomplete="off">
+                    <button type="submit" class="btn btn-warning fw-bold">Gönder</button>
+                </div>
+            </form>
+
+            <div class="mt-3 text-center">
+                {% if current_user.username == 'RealSaatYilmaz' %}
+                    <a href="/admin" class="btn btn-outline-light btn-sm">⬅️ Admin Paneline Dön</a>
+                {% else %}
+                    <a href="/" class="btn btn-outline-light btn-sm">⬅️ Ana Sayfaya Dön</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

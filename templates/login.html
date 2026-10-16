@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5">
+        <div class="card bg-secondary text-white p-4 shadow">
+            <h3 class="text-center mb-4">🔐 Giriş Yap</h3>
+            <form method="POST">
+                <div class="mb-3">
+                    <label>Kullanıcı Adı</label>
+                    <input type="text" name="username" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label>Şifre</label>
+                    <input type="password" name="password" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-warning w-100 fw-bold">Giriş Yap</button>
+            </form>
+            <p class="text-center mt-3">Hesabın yok mu? <a href="/register" class="text-info">Kayıt Ol</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
