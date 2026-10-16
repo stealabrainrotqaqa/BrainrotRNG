@@ -81,19 +81,24 @@ def register():
     if request.method == 'POST':
         username = request.form.get('username')
         email = request.form.get('email')
-        password = generate_password_hash(request.form.get('password'), method='pbkdf2:sha256')
+        raw_password = request.form.get('password')
         
-        if User.query.filter_by(username=username).first():
+        # Kullanıcı adı kontrolü
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user:
             flash('Bu kullanıcı adı zaten kullanılıyor.', 'danger')
             return redirect(url_for('register'))
             
-        new_user = User(username=username, email=email, password=password)
+        # Hatasız şifreleme yöntemi
+        hashed_password = generate_password_hash(raw_password)
+        
+        new_user = User(username=username, email=email, password=hashed_password)
         db.session.add(new_user)
         db.session.commit()
+        
         flash('Kayıt başarılı! Şimdi giriş yapabilirsiniz.', 'success')
         return redirect(url_for('login'))
     return render_template('register.html')
-
 @app.route('/logout')
 @login_required
 def logout():
